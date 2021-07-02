@@ -1,0 +1,19 @@
+{
+    "appenders": {
+        "services": {
+            "type": "multiFile",
+            "base": "logs/customer/",
+            "property": "categoryName",
+            "extension": ".log"
+        }
+    },
+    "categories": {
+        "default": {
+            "appenders": [
+                "services"
+            ],
+            "level": "DEBUG"
+        }
+    }
+}
+
