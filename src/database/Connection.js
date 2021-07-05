@@ -89,7 +89,7 @@ class Connection {
                 database: process.env.erp_database
             });
 
-            logger.info(`Pool de conexões criado no ${dbtype}`);
+            logger.info(`Pool de conexões criado no ${erp_dbtype}`);
             pool.query('SELECT NOW() as now', function (error, results, fields) {
                 if (error) {
                     logger.error(error)

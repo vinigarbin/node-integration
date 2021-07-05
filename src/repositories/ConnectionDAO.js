@@ -1,4 +1,5 @@
 const LogUtils = require('../utils/LogUtils');
+const util = require('util');
 
 let logger = null;
 let clientERP = null;
@@ -11,10 +12,18 @@ class ConnectionDAO {
         logger = LogUtils.getLogger();
     }
 
-    closeConnections() {
+    async closeConnections() {
         logger.info('Fechando conexões com os bancos')
-        clientERP.end();
-        clientSales.end();
+        try {
+            await clientERP.end();
+        } catch (error) {
+            logger.info('Erro ao fechar conexão ERP:\n ' + error)
+        }
+        try {
+            await clientSales.end();
+        } catch (error) {
+            logger.info('Erro ao fechar conexão Sales:\n ' + error)
+        }
     }
 
     async selectErp(sql) {
@@ -22,26 +31,27 @@ class ConnectionDAO {
         if (process.env.erp_dbtype === 'mysql') {
             const query = util.promisify(clientERP.query).bind(clientERP);
             const rows = await query(sql);
-            clientERP.end();
             return rows;
         }
 
         const res = await clientERP.query(sql);
-
         return res.rows;
     }
 
     async selectSales(sql) {
         logger.info('Select on Sales:\n ' + sql)
-        if (process.env.erp_dbtype === 'mysql') {
+        if (process.env.sales_dbtype === 'mysql') {
             const query = util.promisify(clientSales.query).bind(clientSales);
             const rows = await query(sql);
-            clientSales.end();
             return rows;
         }
         const res = await clientSales.query(sql);
-
         return res.rows;
+    }
+
+    async findOne(rows) {
+        console.log(rows, "aqwui");
+        return Promise.resolve({ rows });
     }
 
     async insertSales(sql) {

@@ -10,7 +10,8 @@
     "log4js": "^6.3.0",
     "mysql": "^2.18.1",
     "pg": "^8.6.0",
-    "properties-reader": "^2.2.0"
+    "properties-reader": "^2.2.0",
+    "util": "^0.12.4"
   },
   "scripts": {
     "start": "node index.js"

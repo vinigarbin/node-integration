@@ -60,10 +60,24 @@ module.exports = class CustomerService {
             }
         }
 
-        connectionDAO.closeConnections();
+        await connectionDAO.closeConnections();
+        logger.info('Finalizando serviço de Customer');
+        console.log('Finalizando serviço de Customer');
     }
 }
 
-const sql = `select c.* ,' ' as document_number, concat(id,'|',name,'|',customer_since) as erp_code from tenant_1.customer c`;
-const sqlSales = `select active, name, document_number, erp_code from customer`;
+const sql = `
+SELECT nome AS name,
+       codigo as code,
+       cnpjcpf AS document_number,
+       CASE
+           WHEN controle in(0,
+                            1,
+                            5) THEN 'true'
+           ELSE 'false'
+       END AS active,
+       concat(codigo, '|', cnpjcpf, '|', pessoa) AS erp_code
+FROM cliente c
+`;
+const sqlSales = `select code,active, name, document_number, erp_code from customer`;
 
