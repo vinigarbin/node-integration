@@ -1,8 +1,11 @@
+const { updateBooleanFields } = require('../utils/ObjectsUtils');
+
 module.exports = class Customer {
     constructor(data = {}) {
-        this.active = data.active;
         this.name = data.name;
+        this.code = data.code;
         this.document_number = data.document_number;
+        this.active = updateBooleanFields(data.active);
         this.erp_code = data.erp_code;
 
         Object.freeze(this);
@@ -20,5 +23,3 @@ module.exports = class Customer {
         }
     }
 }
-
-

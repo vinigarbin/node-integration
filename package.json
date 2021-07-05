@@ -14,7 +14,11 @@
     "util": "^0.12.4"
   },
   "scripts": {
+    "dev": "nodemon index.js",
     "start": "node index.js"
   },
-  "author": "Vinicius Garbin"
+  "author": "Vinicius Garbin",
+  "devDependencies": {
+    "nodemon": "^2.0.9"
+  }
 }

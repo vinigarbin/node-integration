@@ -2,7 +2,6 @@ const _ = require('lodash');
 const LogUtils = require('./LogUtils');
 
 function createPropertiesFromObj(row) {
-    LogUtils.getLogger().info('Criando propriedades do objeto');
     let keys = [];
     let values = [];
     Object.keys(row).forEach(key => {
@@ -55,4 +54,12 @@ function diff(sales, erp) {
     }
 }
 
-module.exports = { createPropertiesFromObj, diff };
+function updateBooleanFields(value) {
+    if (value === 'true') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+module.exports = { createPropertiesFromObj, diff, updateBooleanFields };

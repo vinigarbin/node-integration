@@ -1,8 +1,10 @@
+const { updateBooleanFields } = require('../utils/ObjectsUtils');
+
 module.exports = class State {
     constructor(data = {}, country_id) {
-        this.active = data.active;
         this.name = data.name;
         this.initial = data.initial;
+        this.active = updateBooleanFields(data.active);
         this.country_id = country_id;
         this.erp_code = data.erp_code;
 
@@ -17,7 +19,6 @@ module.exports = class State {
         return {
             active: data.active,
             name: data.name,
-            document_number: data.document_number,
         }
     }
 }

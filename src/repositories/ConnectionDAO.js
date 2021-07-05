@@ -2,25 +2,26 @@ const LogUtils = require('../utils/LogUtils');
 const util = require('util');
 
 let logger = null;
-let clientERP = null;
-let clientSales = null;
 
 class ConnectionDAO {
+    clientERP = null;
+    clientSales = null;
+
     constructor(sales, erp) {
-        clientSales = sales;
-        clientERP = erp;
+        this.clientSales = sales;
+        this.clientERP = erp;
         logger = LogUtils.getLogger();
     }
 
     async closeConnections() {
         logger.info('Fechando conexões com os bancos')
         try {
-            await clientERP.end();
+            await this.clientERP.end();
         } catch (error) {
             logger.info('Erro ao fechar conexão ERP:\n ' + error)
         }
         try {
-            await clientSales.end();
+            await this.clientSales.end();
         } catch (error) {
             logger.info('Erro ao fechar conexão Sales:\n ' + error)
         }
@@ -29,36 +30,44 @@ class ConnectionDAO {
     async selectErp(sql) {
         logger.info('Select on Erp:\n ' + sql)
         if (process.env.erp_dbtype === 'mysql') {
-            const query = util.promisify(clientERP.query).bind(clientERP);
+            const query = util.promisify(this.clientERP.query).bind(this.clientERP);
             const rows = await query(sql);
             return rows;
         }
 
-        const res = await clientERP.query(sql);
+        const res = await this.clientERP.query(sql);
         return res.rows;
     }
 
-    async selectSales(sql) {
+    async selectSales(sql, callback) {
         logger.info('Select on Sales:\n ' + sql)
         if (process.env.sales_dbtype === 'mysql') {
-            const query = util.promisify(clientSales.query).bind(clientSales);
+            const query = util.promisify(this.clientSales.query).bind(this.clientSales);
             const rows = await query(sql);
             return rows;
         }
-        const res = await clientSales.query(sql);
+        const res = await this.clientSales.query(sql);
+
+        if (typeof callback === 'function') {
+            return callback(res.rows);
+        }
+
         return res.rows;
     }
 
     async findOne(rows) {
-        console.log(rows, "aqwui");
-        return Promise.resolve({ rows });
+        if (rows.lenght > 1) {
+            logger.warn(`Esperado apenas 1 registro, resultado: ${rows.lenght}`);
+        }
+
+        return rows[0];
     }
 
     async insertSales(sql) {
         try {
             logger.info('\n');
             logger.info(`Insert: ${sql}`)
-            await clientSales.query(sql);
+            await this.clientSales.query(sql);
         } catch (error) {
             logger.warn('\n', sql);
             logger.fatal('\n', error.message)
@@ -69,7 +78,7 @@ class ConnectionDAO {
         try {
             logger.info('\n');
             logger.info(`Update: ${sql}`)
-            await clientSales.query(sql);
+            await this.clientSales.query(sql);
         } catch (error) {
             logger.warn('\n', sql);
             logger.fatal('\n', error.message)
@@ -80,7 +89,7 @@ class ConnectionDAO {
         try {
             logger.info('\n');
             logger.info(`QuerySales: ${sql}`)
-            await clientSales.query(sql);
+            await this.clientSales.query(sql);
         } catch (error) {
             logger.warn('\n', sql);
             logger.fatal('\n', error.message)

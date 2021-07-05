@@ -4,26 +4,30 @@ const Customer = require('../../models/Customer');
 const ObjectUtils = require('../../utils/ObjectsUtils')
 const SqlUtils = require('../../utils/SqlUtils')
 
-const LogUtils = require('../../utils/LogUtils');
+const { change } = require('../../utils/ServiceUtils');
 const entity = 'customer';
-let logger = null;
+
+const log4js = require('log4js').configure('./src/config/log4js.json');
 
 module.exports = class CustomerService {
+    logger = null;
+
     constructor() {
-        logger = LogUtils.getLogger()
+        this.logger = log4js.getLogger(`services.customer`);
     }
 
     async Customer() {
-        logger.info('Service importation Customer');
-        const { sales, erp } = await new Connection().createConnections();
-        const connectionDAO = new ConnectionDAO(sales, erp);
+        change('customer', true);
+        this.logger.info('Service importation Customer');
+        const { sales, erp } = await new Connection(this.logger).createConnections();
+        const connectionDAO = new ConnectionDAO(sales, erp, this.logger);
         const originValues = await connectionDAO.selectSales(sqlSales);
         const customers = await connectionDAO.selectErp(sql);
 
-        logger.info(`Itens carregados no sales: ${originValues.length}`)
-        logger.info(`Itens carregados no erp: ${customers.length}`)
+        let rollbacks = 0;
+        this.logger.info(`Itens carregados no sales: ${originValues.length}`)
+        this.logger.info(`Itens carregados no erp: ${customers.length}`)
 
-        logger.info('Iniciando conversão: data to entity')
         const data = customers.map(d => {
             return new Customer(d);
         })
@@ -36,7 +40,12 @@ module.exports = class CustomerService {
                     const { keys, values } = ObjectUtils.createPropertiesFromObj(row);
                     const sql = SqlUtils.generateInsert(entity, keys, values);
 
-                    await connectionDAO.insertSales(sql);
+                    try {
+                        await connectionDAO.insertSales(sql);
+                    } catch (error) {
+                        rollbacks = rollbacks++;
+                        this.logger.error('INSERT ERROR: ', error);
+                    }
                 }
             }
 
@@ -47,7 +56,12 @@ module.exports = class CustomerService {
                     const { keys, values } = ObjectUtils.createPropertiesFromObj(row);
                     const sql = SqlUtils.generateUpdate(entity, keys, values, erp_code);
 
-                    await connectionDAO.updateSales(sql);
+                    try {
+                        await connectionDAO.updateSales(sql);
+                    } catch (error) {
+                        rollbacks = rollbacks++;
+                        this.logger.error('UPDATE ERROR: ', error);
+                    }
                 }
             }
 
@@ -55,14 +69,22 @@ module.exports = class CustomerService {
                 for (let row of deleted) {
                     const sql = SqlUtils.generateDelete(entity, row.erp_code)
 
-                    await connectionDAO.querySales(sql);
+                    try {
+                        await connectionDAO.querySales(sql);
+                    } catch (error) {
+                        rollbacks = rollbacks++;
+                        this.logger.error('DELETE ERROR: ', error);
+                    }
                 }
             }
         }
 
+        this.logger.warn('ROLLBACKS: ', rollbacks.length);
+
         await connectionDAO.closeConnections();
-        logger.info('Finalizando serviço de Customer');
+        this.logger.info('Finalizando serviço de Customer');
         console.log('Finalizando serviço de Customer');
+        change('customer', false);
     }
 }
 
@@ -79,5 +101,5 @@ SELECT nome AS name,
        concat(codigo, '|', cnpjcpf, '|', pessoa) AS erp_code
 FROM cliente c
 `;
-const sqlSales = `select code,active, name, document_number, erp_code from customer`;
+const sqlSales = `select name, code, document_number, active, erp_code from customer`;
 
